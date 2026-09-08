@@ -14,7 +14,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({ model, solution, isSolving
   const { t } = useI18n();
 
   return (
-    <footer className="w-full bg-white/80 border-t border-slate-200/80 px-4 py-2 text-xs text-slate-600 flex items-center justify-between gap-3 flex-wrap backdrop-blur-xs select-none">
+    <footer className="w-full bg-white border-t border-slate-200 px-4 py-2 text-xs text-slate-600 flex items-center justify-between gap-3 flex-wrap select-none">
       {/* Left: Online/offline + Ready status */}
       <div className="flex items-center gap-3">
         <OfflineIndicator />
@@ -43,7 +43,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({ model, solution, isSolving
           <>
             <span className="text-slate-300">|</span>
             <span className="text-emerald-700 font-medium">
-              {solution.status} ({solution.solveTimeMs.toFixed(1)} ms)
+              {solution.status} ({(solution.solveTimeMs ?? 0).toFixed(1)} ms)
             </span>
           </>
         )}

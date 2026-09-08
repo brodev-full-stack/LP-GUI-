@@ -2,6 +2,7 @@ import highs from 'highs';
 import solver from 'javascript-lp-solver';
 import { LPModel, SolveResult, VariableResult, ConstraintResult, SensitivityVariable, SensitivityConstraint } from './types';
 import { modelToLPFormat } from '../model/transforms';
+import { computeSensitivityRanging } from './sensitivity';
 import { SolverError, InfeasibleError, UnboundedError, NumericalIssueError } from './errors';
 
 type HighsInstance = {
@@ -186,15 +187,18 @@ function solveWithSimplexFallback(model: LPModel, startTime: number): SolveResul
     };
   });
 
-  return {
-    status: 'Optimal',
-    statusMessage: 'Solución óptima encontrada con éxito.',
-    objectiveValue: Math.round(Number(lpResult.result || 0) * 10000) / 10000,
-    columns,
-    rows,
-    solveTimeMs,
-    solverBackend: 'simplex-js',
-  };
+    const fallbackResult: SolveResult = {
+      status: 'Optimal',
+      statusMessage: 'Solución óptima encontrada con éxito.',
+      objectiveValue: Math.round(Number(lpResult.result || 0) * 10000) / 10000,
+      columns,
+      rows,
+      solveTimeMs,
+      solverBackend: 'simplex-js',
+    };
+
+    fallbackResult.sensitivity = computeSensitivityRanging(model, fallbackResult);
+    return fallbackResult;
 }
 
 /**
@@ -318,19 +322,20 @@ export async function solveModelWithHighs(model: LPModel): Promise<SolveResult> 
       });
     });
 
-    return {
+    const initialResult: SolveResult = {
       status: 'Optimal',
       statusMessage: 'Solución óptima verificada con HiGHS WASM.',
       objectiveValue: Math.round(rawResult.ObjectiveValue * 10000) / 10000,
       columns,
       rows,
       solveTimeMs,
-      sensitivity: {
-        variables: sensVars,
-        constraints: sensConstraints,
-      },
       solverBackend: 'highs-wasm',
     };
+
+    const sensitivity = computeSensitivityRanging(model, initialResult);
+    initialResult.sensitivity = sensitivity;
+
+    return initialResult;
   } catch (wasmError) {
     console.warn('HiGHS execution note, applying simplex fallback:', wasmError);
     return solveWithSimplexFallback(model, startTime);

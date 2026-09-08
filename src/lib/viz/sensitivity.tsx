@@ -1,7 +1,7 @@
 import React from 'react';
 import { SolveResult } from '../solver/types';
 import { useI18n } from '../i18n';
-import { Sliders, HelpCircle } from 'lucide-react';
+import { Sliders, CheckCircle2, ArrowRight } from 'lucide-react';
 
 interface SensitivityProps {
   solution?: SolveResult | null;
@@ -16,52 +16,54 @@ export const SensitivityPanel: React.FC<SensitivityProps> = ({ solution }) => {
 
   const { variables, constraints } = solution.sensitivity;
 
-  return (
-    <div id="sensitivity-analysis-panel" className="liquid-card rounded-2xl p-5 border border-white/80 shadow-sm flex flex-col gap-4">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-200/60 pb-3">
-        <div className="flex items-center gap-2">
-          <Sliders className="w-5 h-5 text-indigo-600" />
-          <h3 className="font-semibold text-slate-900 tracking-tight text-base">
-            {t('sensitivity.title')}
-          </h3>
-        </div>
-      </div>
+  const formatBound = (val: number | null, isMin: boolean) => {
+    if (val === null) return isMin ? '-∞' : '+∞';
+    return formatNumber(val);
+  };
 
-      {/* Constraints Dual Prices Table */}
+  return (
+    <div id="sensitivity-analysis-panel" className="flex flex-col gap-5">
+      {/* Constraints RHS Ranging Table */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-slate-700">
-            {t('sensitivity.rhsRanges')} ({t('results.dualPrice')})
+          <span className="text-xs font-semibold text-slate-900">
+            {t('sensitivity.rhsRanges')} ({t('results.tableDualPrice')})
           </span>
         </div>
 
-        <div className="overflow-x-auto rounded-xl border border-slate-200/60 bg-white/70">
+        <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-slate-50/90 text-slate-600 font-medium border-b border-slate-200/60">
-                <th scope="col" className="py-2.5 px-3">Restricción</th>
-                <th scope="col" className="py-2.5 px-3 font-mono">RHS Actual</th>
-                <th scope="col" className="py-2.5 px-3 font-mono">{t('results.dualPrice')}</th>
-                <th scope="col" className="py-2.5 px-3">Impacto Marginal</th>
+              <tr className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+                <th scope="col" className="py-2.5 px-3">{t('results.tableConstraint')}</th>
+                <th scope="col" className="py-2.5 px-3 font-mono">{t('results.tableRhs')}</th>
+                <th scope="col" className="py-2.5 px-3 font-mono">{t('results.tableDualPrice')}</th>
+                <th scope="col" className="py-2.5 px-3 font-mono">{t('results.tableAllowableRange')}</th>
+                <th scope="col" className="py-2.5 px-3">{t('results.tableImpact')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200/50 font-mono">
+            <tbody className="divide-y divide-slate-100 font-mono">
               {constraints.map((c) => {
                 const isDualActive = Math.abs(c.dualPrice) > 1e-4;
+                const minStr = formatBound(c.minRhs, true);
+                const maxStr = formatBound(c.maxRhs, false);
+
                 return (
-                  <tr key={`sens-c-${c.id}`} className="hover:bg-slate-50/50 transition">
-                    <td className="py-2 px-3 font-sans font-medium text-slate-800">{c.name}</td>
-                    <td className="py-2 px-3 text-slate-700">{formatNumber(c.currentRhs)}</td>
+                  <tr key={`sens-c-${c.id}`} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="py-2 px-3 font-sans font-semibold text-slate-900">{c.name}</td>
+                    <td className="py-2 px-3 text-slate-800">{formatNumber(c.currentRhs)}</td>
                     <td className="py-2 px-3 font-bold">
-                      <span className={isDualActive ? 'text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100' : 'text-slate-500'}>
+                      <span className={isDualActive ? 'text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200' : 'text-slate-500'}>
                         {formatNumber(c.dualPrice)}
                       </span>
                     </td>
+                    <td className="py-2 px-3 font-sans font-semibold text-slate-800 text-[11px]">
+                      [{minStr}, {maxStr}]
+                    </td>
                     <td className="py-2 px-3 font-sans text-slate-600 text-[11px]">
                       {isDualActive
-                        ? `+1 en RHS cambia Z en ${formatNumber(c.dualPrice)}`
-                        : 'Recurso abundante (sin impacto marginal)'}
+                        ? t('results.marginalChange', { val: formatNumber(c.dualPrice) })
+                        : t('results.abundantResource')}
                     </td>
                   </tr>
                 );
@@ -71,38 +73,43 @@ export const SensitivityPanel: React.FC<SensitivityProps> = ({ solution }) => {
         </div>
       </div>
 
-      {/* Variables Reduced Costs Table */}
-      <div className="flex flex-col gap-2 pt-2">
-        <span className="text-xs font-semibold text-slate-700">
-          {t('sensitivity.coefficients')} ({t('results.reducedCost')})
+      {/* Variables Objective Coefficients Ranging Table */}
+      <div className="flex flex-col gap-2">
+        <span className="text-xs font-semibold text-slate-900">
+          {t('sensitivity.coefficients')} ({t('results.tableReducedCost')})
         </span>
 
-        <div className="overflow-x-auto rounded-xl border border-slate-200/60 bg-white/70">
+        <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-slate-50/90 text-slate-600 font-medium border-b border-slate-200/60">
-                <th scope="col" className="py-2.5 px-3">Variable</th>
-                <th scope="col" className="py-2.5 px-3 font-mono">Coef. Actual (c)</th>
-                <th scope="col" className="py-2.5 px-3 font-mono">{t('results.reducedCost')}</th>
-                <th scope="col" className="py-2.5 px-3">Estado en Base</th>
+              <tr className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+                <th scope="col" className="py-2.5 px-3">{t('results.tableVar')}</th>
+                <th scope="col" className="py-2.5 px-3 font-mono">{t('sensitivity.current')} (c)</th>
+                <th scope="col" className="py-2.5 px-3 font-mono">{t('results.tableReducedCost')}</th>
+                <th scope="col" className="py-2.5 px-3 font-mono">{t('results.tableAllowableRange')}</th>
+                <th scope="col" className="py-2.5 px-3">{t('results.tableBasisStatus')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200/50 font-mono">
+            <tbody className="divide-y divide-slate-100 font-mono">
               {variables.map((v) => {
                 const isNonZeroRC = Math.abs(v.reducedCost) > 1e-4;
+                const minStr = formatBound(v.minCoeff, true);
+                const maxStr = formatBound(v.maxCoeff, false);
+
                 return (
-                  <tr key={`sens-v-${v.varId}`} className="hover:bg-slate-50/50 transition">
-                    <td className="py-2 px-3 font-sans font-medium text-slate-800">{v.name}</td>
-                    <td className="py-2 px-3 text-slate-700">{formatNumber(v.currentCoeff)}</td>
+                  <tr key={`sens-v-${v.varId}`} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="py-2 px-3 font-sans font-semibold text-slate-900">{v.name}</td>
+                    <td className="py-2 px-3 text-slate-800">{formatNumber(v.currentCoeff)}</td>
                     <td className="py-2 px-3 font-bold">
-                      <span className={isNonZeroRC ? 'text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100' : 'text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100'}>
+                      <span className={isNonZeroRC ? 'text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200' : 'text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200'}>
                         {formatNumber(v.reducedCost)}
                       </span>
                     </td>
+                    <td className="py-2 px-3 font-sans font-semibold text-slate-800 text-[11px]">
+                      [{minStr}, {maxStr}]
+                    </td>
                     <td className="py-2 px-3 font-sans text-slate-600 text-[11px]">
-                      {isNonZeroRC
-                        ? `Fuera de base (se debe mejorar coeff en ${formatNumber(Math.abs(v.reducedCost))} para entrar)`
-                        : 'Variable básica activa en solución'}
+                      {isNonZeroRC ? t('results.outOfBasis') : t('results.inBasis')}
                     </td>
                   </tr>
                 );

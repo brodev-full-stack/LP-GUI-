@@ -57,7 +57,6 @@ export const VariableTable: React.FC<VariableTableProps> = ({ model, onChange })
     const updatedVariables = model.variables.map((v) => {
       if (v.id === varId) {
         const updated = { ...v, ...patch };
-        // If binary, automatically enforce bounds 0 and 1
         if (patch.type === 'binary') {
           updated.lowerBound = 0;
           updated.upperBound = 1;
@@ -74,15 +73,15 @@ export const VariableTable: React.FC<VariableTableProps> = ({ model, onChange })
   };
 
   return (
-    <div id="variables-table-card" className="liquid-card rounded-2xl p-4 md:p-5 border border-white/80 shadow-xs flex flex-col gap-3.5">
+    <div id="variables-table-card" className="swiss-card p-4 md:p-5 flex flex-col gap-3.5">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-200/60 pb-3">
+      <div className="flex items-center justify-between border-b border-slate-200 pb-3">
         <div className="flex items-center gap-2">
           <SlidersHorizontal className="w-4 h-4 text-blue-600" />
-          <h3 className="font-semibold text-slate-900 text-sm tracking-tight">
+          <h3 className="font-bold text-slate-900 text-sm tracking-tight">
             {t('editor.variables')}
           </h3>
-          <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium">
+          <span className="text-xs font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-semibold">
             {model.variables.length}
           </span>
         </div>
@@ -91,7 +90,7 @@ export const VariableTable: React.FC<VariableTableProps> = ({ model, onChange })
           type="button"
           id="add-variable-button"
           onClick={handleAddVariable}
-          className="flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200/60 transition cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition cursor-pointer"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>{t('editor.addVariable')}</span>
@@ -99,10 +98,10 @@ export const VariableTable: React.FC<VariableTableProps> = ({ model, onChange })
       </div>
 
       {/* Variables Table */}
-      <div className="overflow-x-auto rounded-xl border border-slate-200/70 bg-white/60">
+      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="bg-slate-50/80 text-slate-600 font-semibold border-b border-slate-200/70">
+            <tr className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
               <th scope="col" className="py-2.5 px-3 w-10 text-center">#</th>
               <th scope="col" className="py-2.5 px-3">{t('editor.varName')}</th>
               <th scope="col" className="py-2.5 px-3">{t('editor.varType')}</th>
@@ -111,10 +110,10 @@ export const VariableTable: React.FC<VariableTableProps> = ({ model, onChange })
               <th scope="col" className="py-2.5 px-3 w-12 text-center"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-200/50">
+          <tbody className="divide-y divide-slate-100">
             {model.variables.map((v, idx) => (
-              <tr key={`var-row-${v.id}`} className="hover:bg-slate-50/50 transition">
-                <td className="py-2 px-3 text-center font-mono text-slate-600">{idx + 1}</td>
+              <tr key={`var-row-${v.id}`} className="hover:bg-slate-50/70 transition-colors">
+                <td className="py-2 px-3 text-center font-mono text-slate-500">{idx + 1}</td>
 
                 {/* Variable Name */}
                 <td className="py-2 px-3">
@@ -122,7 +121,7 @@ export const VariableTable: React.FC<VariableTableProps> = ({ model, onChange })
                     type="text"
                     value={v.name}
                     onChange={(e) => handleUpdateVar(v.id, { name: e.target.value })}
-                    className="font-mono font-medium text-xs text-blue-700 px-2 py-1 rounded bg-white border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-hidden w-24"
+                    className="font-mono font-bold text-xs text-blue-700 px-2 py-1 rounded bg-white border border-slate-200 focus:border-blue-500 outline-hidden w-24"
                   />
                 </td>
 
@@ -131,7 +130,7 @@ export const VariableTable: React.FC<VariableTableProps> = ({ model, onChange })
                   <select
                     value={v.type}
                     onChange={(e) => handleUpdateVar(v.id, { type: e.target.value as VariableType })}
-                    className="text-xs text-slate-700 px-2 py-1 rounded bg-white border border-slate-200 focus:border-blue-500 outline-hidden cursor-pointer"
+                    className="text-xs text-slate-800 px-2 py-1 rounded bg-white border border-slate-200 focus:border-blue-500 outline-hidden cursor-pointer"
                   >
                     <option value="continuous">{t('editor.typeContinuous')}</option>
                     <option value="integer">{t('editor.typeInteger')}</option>
@@ -149,7 +148,7 @@ export const VariableTable: React.FC<VariableTableProps> = ({ model, onChange })
                     disabled={v.type === 'binary'}
                     onChange={(e) => {
                       const val = e.target.value === '' ? null : parseFloat(e.target.value);
-                      handleUpdateVar(v.id, { lowerBound: isNaN(val as number) ? null : val });
+                      handleUpdateVar(v.id, { lowerBound: val !== null && isNaN(val) ? null : val });
                     }}
                     className="font-mono text-xs text-slate-800 px-2 py-1 rounded bg-white border border-slate-200 focus:border-blue-500 outline-hidden w-20 disabled:bg-slate-100 disabled:text-slate-400"
                   />
@@ -165,13 +164,13 @@ export const VariableTable: React.FC<VariableTableProps> = ({ model, onChange })
                     disabled={v.type === 'binary'}
                     onChange={(e) => {
                       const val = e.target.value === '' ? null : parseFloat(e.target.value);
-                      handleUpdateVar(v.id, { upperBound: isNaN(val as number) ? null : val });
+                      handleUpdateVar(v.id, { upperBound: val !== null && isNaN(val) ? null : val });
                     }}
                     className="font-mono text-xs text-slate-800 px-2 py-1 rounded bg-white border border-slate-200 focus:border-blue-500 outline-hidden w-20 disabled:bg-slate-100 disabled:text-slate-400"
                   />
                 </td>
 
-                {/* Remove Variable Action */}
+                {/* Delete Variable */}
                 <td className="py-2 px-3 text-center">
                   <button
                     type="button"

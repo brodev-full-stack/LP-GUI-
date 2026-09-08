@@ -42,11 +42,11 @@ export const TopBar: React.FC<TopBarProps> = ({
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-30 w-full glass border-b border-white/60 shadow-2xs backdrop-blur-md bg-white/75">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+    <header className="sticky top-0 z-30 w-full border-b border-slate-200 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-3">
         {/* Left: Brand Identity */}
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-xs font-mono font-bold text-sm tracking-tighter">
+          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-mono font-bold text-xs tracking-tight">
             LP
           </div>
           <div className="flex flex-col">
@@ -54,11 +54,11 @@ export const TopBar: React.FC<TopBarProps> = ({
               <h1 className="font-bold text-slate-900 tracking-tight text-base sm:text-lg">
                 {t('app.title')}
               </h1>
-              <span className="hidden md:inline-block text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold border border-blue-200">
+              <span className="hidden md:inline-block text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 font-semibold border border-slate-200">
                 HiGHS WASM
               </span>
             </div>
-            <span className="text-[11px] text-slate-600 hidden sm:inline-block">
+            <span className="text-[11px] text-slate-500 hidden sm:inline-block">
               {t('app.subtitle')}
             </span>
           </div>
@@ -72,7 +72,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             id="solve-model-button"
             onClick={onSolve}
             disabled={isSolving}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-semibold shadow-xs hover:bg-blue-700 active:bg-blue-800 transition disabled:opacity-50 cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-md bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 active:bg-blue-800 transition disabled:opacity-50 cursor-pointer"
           >
             <Play className="w-3.5 h-3.5 fill-current" />
             <span>{isSolving ? t('editor.solving') : t('editor.solve')}</span>
@@ -83,8 +83,8 @@ export const TopBar: React.FC<TopBarProps> = ({
             type="button"
             id="save-model-button"
             onClick={onSave}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white/80 hover:bg-white text-xs font-medium text-slate-700 shadow-2xs transition cursor-pointer"
-            title="Guardar Modelo (Ctrl+S)"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 transition cursor-pointer"
+            title="Ctrl+S"
           >
             {isSaved ? (
               <Check className="w-3.5 h-3.5 text-emerald-600" />
@@ -100,7 +100,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           <button
             type="button"
             onClick={onNewModel}
-            className="hidden lg:flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white/80 hover:bg-white text-xs font-medium text-slate-700 shadow-2xs transition cursor-pointer"
+            className="hidden lg:flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 transition cursor-pointer"
             title={t('nav.newModel')}
           >
             <FilePlus className="w-3.5 h-3.5 text-slate-500" />
@@ -111,7 +111,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           <button
             type="button"
             onClick={onOpenExamples}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white/80 hover:bg-white text-xs font-medium text-slate-700 shadow-2xs transition cursor-pointer"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 transition cursor-pointer"
             title={t('nav.examples')}
           >
             <BookOpen className="w-3.5 h-3.5 text-slate-500" />
@@ -122,7 +122,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           <button
             type="button"
             onClick={onOpenSaved}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white/80 hover:bg-white text-xs font-medium text-slate-700 shadow-2xs transition cursor-pointer"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 transition cursor-pointer"
             title={t('nav.savedModels')}
           >
             <FolderOpen className="w-3.5 h-3.5 text-slate-500" />
@@ -133,7 +133,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           <button
             type="button"
             onClick={onOpenExport}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white/80 hover:bg-white text-xs font-medium text-slate-700 shadow-2xs transition cursor-pointer"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 transition cursor-pointer"
             title={t('export.title')}
           >
             <Download className="w-3.5 h-3.5 text-slate-500" />
@@ -144,7 +144,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           <button
             type="button"
             onClick={onOpenAbout}
-            className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl border border-slate-200 bg-white/80 hover:bg-white text-xs font-medium text-slate-700 shadow-2xs transition cursor-pointer"
+            className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 transition cursor-pointer"
             title={t('nav.about')}
           >
             <Info className="w-3.5 h-3.5 text-slate-500" />
@@ -156,8 +156,8 @@ export const TopBar: React.FC<TopBarProps> = ({
             <button
               type="button"
               onClick={() => setLangDropdownOpen(!langDropdownOpen)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white/80 hover:bg-white text-xs font-medium text-slate-700 shadow-2xs transition cursor-pointer uppercase"
-              title="Cambiar idioma / Switch language"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 transition cursor-pointer uppercase"
+              title="Switch language"
             >
               <Globe className="w-3.5 h-3.5 text-blue-600" />
               <span>{locale}</span>
@@ -165,7 +165,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 
             {langDropdownOpen && (
               <div
-                className="absolute right-0 mt-2 w-44 rounded-xl bg-white p-1 shadow-xl border border-slate-200 z-50 animate-in fade-in zoom-in-95 duration-100"
+                className="absolute right-0 mt-2 w-44 rounded-lg bg-white p-1 shadow-lg border border-slate-200 z-50 animate-in fade-in duration-100"
                 onClick={() => setLangDropdownOpen(false)}
               >
                 {languages.map((l) => (
@@ -173,7 +173,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                     key={l.code}
                     type="button"
                     onClick={() => setLocale(l.code as SupportedLocale)}
-                    className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-lg text-left transition cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-md text-left transition cursor-pointer ${
                       locale === l.code
                         ? 'bg-blue-50 text-blue-700 font-semibold'
                         : 'text-slate-700 hover:bg-slate-50'

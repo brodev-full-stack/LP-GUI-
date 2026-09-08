@@ -85,7 +85,7 @@ export function compute2DFeasibleRegion(model: LPModel, solution?: SolveResult |
   let optX = 0;
   let optY = 0;
   let hasOpt = false;
-  if (solution && solution.status === 'Optimal' && solution.columns[v1.id] && solution.columns[v2.id]) {
+  if (solution && solution.status === 'Optimal' && solution.columns && solution.columns[v1.id] && solution.columns[v2.id]) {
     optX = solution.columns[v1.id].value;
     optY = solution.columns[v2.id].value;
     hasOpt = true;

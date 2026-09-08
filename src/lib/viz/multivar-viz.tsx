@@ -26,10 +26,10 @@ export const MultivarViz: React.FC<MultivarVizProps> = ({ model, solution }) => 
       )}
 
       {/* Variables Values Chart */}
-      <div className="liquid-card rounded-2xl p-5 border border-white/80 shadow-sm flex flex-col gap-3">
-        <div className="flex items-center gap-2 border-b border-slate-200/60 pb-3">
+      <div className="swiss-card p-5 flex flex-col gap-3">
+        <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
           <BarChart3 className="w-4 h-4 text-blue-600" />
-          <h4 className="font-semibold text-slate-800 text-sm">
+          <h4 className="font-bold text-slate-900 text-sm">
             {t('results.variablesSummary')}
           </h4>
         </div>
@@ -73,11 +73,11 @@ export const MultivarViz: React.FC<MultivarVizProps> = ({ model, solution }) => 
       </div>
 
       {/* Constraints Utilization Chart */}
-      <div className="liquid-card rounded-2xl p-5 border border-white/80 shadow-sm flex flex-col gap-3">
-        <div className="flex items-center justify-between border-b border-slate-200/60 pb-3">
+      <div className="swiss-card p-5 flex flex-col gap-3">
+        <div className="flex items-center justify-between border-b border-slate-200 pb-3">
           <div className="flex items-center gap-2">
-            <Layers className="w-4 h-4 text-emerald-600" />
-            <h4 className="font-semibold text-slate-800 text-sm">
+            <Layers className="w-4 h-4 text-blue-600" />
+            <h4 className="font-bold text-slate-900 text-sm">
               {t('results.constraintsSummary')}
             </h4>
           </div>

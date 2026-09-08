@@ -1,7 +1,7 @@
 import React from 'react';
 import { LPModel, ObjectiveDirection } from '../../solver/types';
 import { useI18n } from '../../i18n';
-import { Target, HelpCircle, TrendingUp, TrendingDown } from 'lucide-react';
+import { Target, TrendingUp, TrendingDown } from 'lucide-react';
 
 interface ObjectiveFormProps {
   model: LPModel;
@@ -60,24 +60,24 @@ export const ObjectiveForm: React.FC<ObjectiveFormProps> = ({ model, onChange })
   }
 
   return (
-    <div id="objective-editor-card" className="liquid-card rounded-2xl p-4 md:p-5 border border-white/80 shadow-xs flex flex-col gap-3.5">
+    <div id="objective-editor-card" className="swiss-card p-4 md:p-5 flex flex-col gap-3.5">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-2 border-b border-slate-200/60 pb-3">
+      <div className="flex items-center justify-between flex-wrap gap-2 border-b border-slate-200 pb-3">
         <div className="flex items-center gap-2">
           <Target className="w-4 h-4 text-blue-600" />
-          <h3 className="font-semibold text-slate-900 text-sm tracking-tight">
+          <h3 className="font-bold text-slate-900 text-sm tracking-tight">
             {t('editor.objective')}
           </h3>
         </div>
 
         {/* Min / Max Toggle */}
-        <div className="inline-flex rounded-lg p-0.5 bg-slate-100 border border-slate-200/80">
+        <div className="inline-flex rounded-lg p-0.5 bg-slate-100 border border-slate-200">
           <button
             type="button"
             onClick={() => setDirection('maximize')}
             className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition cursor-pointer ${
               model.objective.direction === 'maximize'
-                ? 'bg-white text-blue-700 shadow-xs'
+                ? 'bg-white text-blue-700 shadow-2xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -89,7 +89,7 @@ export const ObjectiveForm: React.FC<ObjectiveFormProps> = ({ model, onChange })
             onClick={() => setDirection('minimize')}
             className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition cursor-pointer ${
               model.objective.direction === 'minimize'
-                ? 'bg-white text-blue-700 shadow-xs'
+                ? 'bg-white text-blue-700 shadow-2xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -106,7 +106,7 @@ export const ObjectiveForm: React.FC<ObjectiveFormProps> = ({ model, onChange })
           return (
             <div
               key={`obj-term-${v.id}`}
-              className="flex items-center gap-2 p-2 rounded-xl bg-white/70 border border-slate-200/70 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition"
+              className="flex items-center gap-2 p-2 rounded-lg bg-white border border-slate-200 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-100 transition"
             >
               <input
                 type="number"
@@ -117,9 +117,9 @@ export const ObjectiveForm: React.FC<ObjectiveFormProps> = ({ model, onChange })
                   const val = e.target.value === '' ? 0 : parseFloat(e.target.value);
                   setCoefficient(v.id, isNaN(val) ? 0 : val);
                 }}
-                className="w-full text-right font-mono font-medium text-sm text-slate-800 bg-transparent outline-hidden px-1"
+                className="w-full text-right font-mono font-semibold text-sm text-slate-900 bg-transparent outline-hidden px-1"
               />
-              <span className="font-mono font-semibold text-xs text-blue-600 px-1.5 py-0.5 rounded bg-blue-50 border border-blue-200/50 shrink-0">
+              <span className="font-mono font-bold text-xs text-blue-700 px-1.5 py-0.5 rounded bg-blue-50 border border-blue-200 shrink-0">
                 {v.name}
               </span>
             </div>
@@ -128,8 +128,8 @@ export const ObjectiveForm: React.FC<ObjectiveFormProps> = ({ model, onChange })
       </div>
 
       {/* Live Math Preview Box */}
-      <div className="px-3 py-2 rounded-xl bg-slate-50/90 border border-slate-200/50 text-xs font-mono text-slate-700 flex items-center justify-between gap-2 overflow-x-auto">
-        <span className="text-slate-600 text-[11px] font-sans shrink-0">Notación:</span>
+      <div className="px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs font-mono text-slate-700 flex items-center justify-between gap-2 overflow-x-auto">
+        <span className="text-slate-500 text-[11px] font-sans shrink-0 font-medium">Z:</span>
         <span className="font-semibold text-blue-900 truncate">{mathPreview}</span>
       </div>
     </div>

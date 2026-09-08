@@ -25,9 +25,12 @@ import { FeasibleRegion } from './lib/viz/feasible-region';
 import { MultivarViz } from './lib/viz/multivar-viz';
 import { SolutionPanel } from './lib/components/results/SolutionPanel';
 
-import { Edit3, Play, Save, Check } from 'lucide-react';
+import { Edit3, Play, FileCode2, Compass, BarChart2, GripVertical } from 'lucide-react';
 
 const LAST_MODEL_KEY = 'last_active_model_id';
+const SPLIT_RATIO_KEY = 'desktop_split_ratio';
+
+type MobileTab = 'editor' | 'viz' | 'results';
 
 const AppContent: React.FC = () => {
   const { t, formatDate } = useI18n();
@@ -38,6 +41,14 @@ const AppContent: React.FC = () => {
   const [isSolving, setIsSolving] = useState<boolean>(false);
   const [isSaved, setIsSaved] = useState<boolean>(false);
 
+  // Mobile navigation tab
+  const [mobileTab, setMobileTab] = useState<MobileTab>('editor');
+
+  // Desktop resizable split ratio (% of left editor pane, default 54%)
+  const [splitRatio, setSplitRatio] = useState<number>(54);
+  const [isDraggingSplit, setIsDraggingSplit] = useState<boolean>(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
   // Modal open states
   const [examplesModalOpen, setExamplesModalOpen] = useState<boolean>(false);
   const [savedModalOpen, setSavedModalOpen] = useState<boolean>(false);
@@ -47,10 +58,15 @@ const AppContent: React.FC = () => {
   // Editing model name inline
   const [isEditingName, setIsEditingName] = useState<boolean>(false);
 
-  // Load last active model from IndexedDB on startup
+  // Load last active model & split ratio from storage
   useEffect(() => {
-    async function initModel() {
+    async function initModelAndPreferences() {
       try {
+        const savedSplit = await getPreference<number>(SPLIT_RATIO_KEY, 54);
+        if (savedSplit && savedSplit >= 30 && savedSplit <= 70) {
+          setSplitRatio(savedSplit);
+        }
+
         const lastId = await getPreference<string>(LAST_MODEL_KEY, '');
         if (lastId) {
           const saved = await getModel(lastId);
@@ -61,12 +77,11 @@ const AppContent: React.FC = () => {
           }
         }
       } catch (err) {
-        console.warn('Could not load cached model, using default', err);
+        console.warn('Could not load cached preferences, using defaults', err);
       }
-      // Solve initial default model immediately
       solve(PRELOADED_EXAMPLES[0]);
     }
-    initModel();
+    initModelAndPreferences();
   }, []);
 
   const solve = async (modelToSolve: LPModel) => {
@@ -99,7 +114,6 @@ const AppContent: React.FC = () => {
 
   const handleModelChange = (updatedModel: LPModel) => {
     setModel(updatedModel);
-    // Auto-save model ID
     savePreference(LAST_MODEL_KEY, updatedModel.id);
   };
 
@@ -117,15 +131,73 @@ const AppContent: React.FC = () => {
     solve(selected);
   };
 
+  // Draggable Split Divider Logic
+  const handleSplitMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDraggingSplit(true);
+  };
+
+  const handleSplitTouchStart = (e: React.TouchEvent) => {
+    setIsDraggingSplit(true);
+  };
+
+  const handleSplitDoubleClick = () => {
+    setSplitRatio(54);
+    savePreference(SPLIT_RATIO_KEY, 54);
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDraggingSplit || !containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const newRatio = ((e.clientX - rect.left) / rect.width) * 100;
+      const clamped = Math.min(72, Math.max(28, Math.round(newRatio)));
+      setSplitRatio(clamped);
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isDraggingSplit || !containerRef.current || e.touches.length === 0) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const clientX = e.touches[0].clientX;
+      const newRatio = ((clientX - rect.left) / rect.width) * 100;
+      const clamped = Math.min(72, Math.max(28, Math.round(newRatio)));
+      setSplitRatio(clamped);
+    };
+
+    const handleMouseUp = () => {
+      if (isDraggingSplit) {
+        setIsDraggingSplit(false);
+        savePreference(SPLIT_RATIO_KEY, splitRatio);
+      }
+    };
+
+    if (isDraggingSplit) {
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+      window.addEventListener('touchmove', handleTouchMove);
+      window.addEventListener('touchend', handleMouseUp);
+    } else {
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleMouseUp);
+    };
+  }, [isDraggingSplit, splitRatio]);
+
   // Global Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ctrl+Enter or Cmd+Enter: Solve
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         e.preventDefault();
         handleSolve();
       }
-      // Ctrl+S or Cmd+S: Save
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
         handleSave();
@@ -154,22 +226,22 @@ const AppContent: React.FC = () => {
       </div>
 
       {/* Main Workspace Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 flex flex-col gap-6">
-        {/* Printable Executive Header (Only visible on window.print()) */}
+      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 flex flex-col gap-4">
+        {/* Printable Executive Header */}
         <div className="hidden print-only border-b border-slate-300 pb-4 mb-2">
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-xl font-bold text-slate-900">{model.name}</h1>
-              <p className="text-xs text-slate-600">Informe de Optimización Lineal - LP Studio</p>
+              <p className="text-xs text-slate-600">{t('print.reportSubtitle')}</p>
             </div>
             <div className="text-right text-xs text-slate-500 font-mono">
-              Fecha: {formatDate(Date.now())}
+              {t('print.date')}: {formatDate(Date.now())}
             </div>
           </div>
         </div>
 
-        {/* Model Title & Inline Edit Header */}
-        <div className="flex items-center justify-between flex-wrap gap-3">
+        {/* Model Title & Quick Action Bar */}
+        <div className="flex items-center justify-between flex-wrap gap-2.5 pb-1">
           <div className="flex items-center gap-3">
             {isEditingName ? (
               <input
@@ -181,22 +253,22 @@ const AppContent: React.FC = () => {
                   if (e.key === 'Enter') setIsEditingName(false);
                 }}
                 onChange={(e) => handleModelChange({ ...model, name: e.target.value })}
-                className="text-lg sm:text-xl font-bold text-slate-900 bg-white px-2 py-0.5 rounded-lg border border-blue-400 outline-hidden"
+                className="text-base sm:text-lg font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-blue-500 outline-hidden"
               />
             ) : (
               <div
                 onClick={() => setIsEditingName(true)}
                 className="group flex items-center gap-2 cursor-pointer"
-                title="Haga clic para editar el nombre del modelo"
+                title={model.name}
               >
-                <h2 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
+                <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
                   {model.name}
                 </h2>
-                <Edit3 className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition" />
+                <Edit3 className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 transition" />
               </div>
             )}
 
-            <span className="text-xs text-slate-600 font-mono hidden sm:inline">
+            <span className="text-xs text-slate-500 font-mono hidden sm:inline">
               ({model.variables.length} vars, {model.constraints.length} rest.)
             </span>
           </div>
@@ -206,7 +278,7 @@ const AppContent: React.FC = () => {
               type="button"
               onClick={handleSolve}
               disabled={isSolving}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold text-xs shadow-sm hover:bg-blue-700 active:bg-blue-800 transition cursor-pointer disabled:opacity-50"
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-md bg-blue-600 text-white font-semibold text-xs hover:bg-blue-700 active:bg-blue-800 transition cursor-pointer disabled:opacity-50"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
               <span>{isSolving ? t('editor.solving') : t('editor.solve')}</span>
@@ -217,45 +289,125 @@ const AppContent: React.FC = () => {
         {/* Real-time Inline Model Warnings */}
         <ValidationBar model={model} />
 
-        {/* Responsive Two-Column Swiss Grid Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left Column: Formulation & Model Editor (7 cols on lg) */}
-          <div className="lg:col-span-7 flex flex-col gap-5">
-            {/* Objective Function */}
+        {/* Mobile Segmented Navigation Tabs (< lg screens) */}
+        <div className="lg:hidden no-print bg-slate-200/80 p-1 rounded-lg flex items-center text-xs font-semibold">
+          <button
+            type="button"
+            onClick={() => setMobileTab('editor')}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md transition cursor-pointer ${
+              mobileTab === 'editor'
+                ? 'bg-white text-blue-700 shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <FileCode2 className="w-3.5 h-3.5" />
+            <span>{t('mobile.tabEditor')}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setMobileTab('viz')}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md transition cursor-pointer ${
+              mobileTab === 'viz'
+                ? 'bg-white text-blue-700 shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Compass className="w-3.5 h-3.5" />
+            <span>{t('mobile.tabViz')}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setMobileTab('results')}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md transition cursor-pointer ${
+              mobileTab === 'results'
+                ? 'bg-white text-blue-700 shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <BarChart2 className="w-3.5 h-3.5" />
+            <span>{t('mobile.tabResults')}</span>
+            {solution?.status === 'Optimal' && (
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            )}
+          </button>
+        </div>
+
+        {/* Mobile View: Render only active tab */}
+        <div className="lg:hidden flex flex-col gap-4">
+          {mobileTab === 'editor' && (
+            <div className="flex flex-col gap-4">
+              <ObjectiveForm model={model} onChange={handleModelChange} />
+              <VariableTable model={model} onChange={handleModelChange} />
+              <ConstraintTable model={model} onChange={handleModelChange} />
+            </div>
+          )}
+
+          {mobileTab === 'viz' && (
+            <div className="flex flex-col gap-4">
+              {model.variables.length === 2 && (
+                <FeasibleRegion model={model} solution={solution} isSolving={isSolving} />
+              )}
+              {model.variables.length > 2 && (
+                <MultivarViz model={model} solution={solution} />
+              )}
+            </div>
+          )}
+
+          {mobileTab === 'results' && (
+            <div className="flex flex-col gap-4">
+              <SolutionPanel model={model} solution={solution} isSolving={isSolving} />
+            </div>
+          )}
+        </div>
+
+        {/* Desktop View: Draggable Resizable Split Pane (>= lg screens) */}
+        <div
+          ref={containerRef}
+          className="hidden lg:flex w-full items-start gap-0 relative select-none"
+        >
+          {/* Left Column: Formulation & Model Editor */}
+          <div
+            style={{ width: `${splitRatio}%` }}
+            className="flex flex-col gap-4 pr-3 shrink-0 overflow-y-auto"
+          >
             <ObjectiveForm model={model} onChange={handleModelChange} />
-
-            {/* Decision Variables Table */}
             <VariableTable model={model} onChange={handleModelChange} />
-
-            {/* Constraints Table */}
             <ConstraintTable model={model} onChange={handleModelChange} />
           </div>
 
-          {/* Right Column: Visualization & Results (5 cols on lg) */}
-          <div className="lg:col-span-5 flex flex-col gap-5">
-            {/* 2D Feasible Region Plot if 2 variables */}
+          {/* Draggable Divider Bar */}
+          <div
+            onMouseDown={handleSplitMouseDown}
+            onTouchStart={handleSplitTouchStart}
+            onDoubleClick={handleSplitDoubleClick}
+            title={t('editor.splitDrag')}
+            className={`w-3 mx-1 self-stretch flex items-center justify-center splitter-handle rounded transition-colors group cursor-col-resize ${
+              isDraggingSplit ? 'bg-blue-500 text-white' : 'hover:bg-slate-200 text-slate-400'
+            }`}
+          >
+            <div className="h-10 w-1.5 flex flex-col items-center justify-center gap-1 rounded bg-slate-300 group-hover:bg-blue-600 transition-colors">
+              <span className="w-0.5 h-0.5 rounded-full bg-white" />
+              <span className="w-0.5 h-0.5 rounded-full bg-white" />
+              <span className="w-0.5 h-0.5 rounded-full bg-white" />
+            </div>
+          </div>
+
+          {/* Right Column: Visualization & Results */}
+          <div
+            style={{ width: `calc(${100 - splitRatio}% - 20px)` }}
+            className="flex flex-col gap-4 pl-3 shrink-0 overflow-y-auto"
+          >
             {model.variables.length === 2 && (
-              <FeasibleRegion
-                model={model}
-                solution={solution}
-                isSolving={isSolving}
-              />
+              <FeasibleRegion model={model} solution={solution} isSolving={isSolving} />
             )}
 
-            {/* Multivariable Resource Breakdown if > 2 variables */}
             {model.variables.length > 2 && (
-              <MultivarViz
-                model={model}
-                solution={solution}
-              />
+              <MultivarViz model={model} solution={solution} />
             )}
 
-            {/* Solution & Sensitivity Analysis Panel */}
-            <SolutionPanel
-              model={model}
-              solution={solution}
-              isSolving={isSolving}
-            />
+            <SolutionPanel model={model} solution={solution} isSolving={isSolving} />
           </div>
         </div>
       </main>

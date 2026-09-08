@@ -104,15 +104,15 @@ export const FeasibleRegion: React.FC<FeasibleRegionProps> = ({ model, solution,
   };
 
   return (
-    <div id="feasible-region-card" className="liquid-card rounded-2xl p-5 border border-white/80 shadow-sm flex flex-col gap-4">
+    <div id="feasible-region-card" className="swiss-card p-5 flex flex-col gap-4">
       {/* Card Header */}
-      <div className="flex items-center justify-between flex-wrap gap-2 border-b border-slate-200/60 pb-3">
+      <div className="flex items-center justify-between flex-wrap gap-2 border-b border-slate-200 pb-3">
         <div className="flex items-center gap-2">
           <Compass className="w-5 h-5 text-blue-600" />
-          <h3 className="font-semibold text-slate-900 tracking-tight text-base">
+          <h3 className="font-bold text-slate-900 tracking-tight text-sm sm:text-base">
             {t('viz.title2D')}
           </h3>
-          <span className="text-xs font-mono px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200">
+          <span className="text-xs font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 font-semibold">
             {v1Name} × {v2Name}
           </span>
         </div>
@@ -122,7 +122,7 @@ export const FeasibleRegion: React.FC<FeasibleRegionProps> = ({ model, solution,
             id="animate-objective-button"
             onClick={() => triggerAnimation(optimalZ)}
             disabled={isAnimating || !solution || solution.status !== 'Optimal'}
-            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 transition shadow-xs disabled:opacity-40"
+            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 transition disabled:opacity-40 cursor-pointer"
             title={t('viz.animate')}
           >
             <Play className="w-3.5 h-3.5 text-blue-600" />
@@ -132,7 +132,7 @@ export const FeasibleRegion: React.FC<FeasibleRegionProps> = ({ model, solution,
           <button
             id="export-png-button"
             onClick={handleExportPNG}
-            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 transition shadow-xs"
+            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 transition cursor-pointer"
             title={t('viz.exportPng')}
           >
             <Download className="w-3.5 h-3.5 text-slate-600" />
