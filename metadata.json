@@ -1,0 +1,6 @@
+{
+  "name": "LP Studio",
+  "description": "Estudio interactivo de programación lineal (PWA) para modelar, resolver con HiGHS WASM y visualizar regiones factibles en 2D.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
