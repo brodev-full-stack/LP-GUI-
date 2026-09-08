@@ -206,6 +206,19 @@ function solveWithSimplexFallback(model: LPModel, startTime: number): SolveResul
  */
 export async function solveModelWithHighs(model: LPModel): Promise<SolveResult> {
   const startTime = performance.now();
+
+  if (!model.variables || model.variables.length === 0) {
+    return {
+      status: 'Infeasible',
+      statusMessage: 'El modelo no contiene variables de decisión. Agrega variables para resolver.',
+      objectiveValue: 0,
+      columns: {},
+      rows: [],
+      solveTimeMs: 0,
+      solverBackend: 'highs-wasm',
+    };
+  }
+
   const formatMapping = modelToLPFormat(model);
 
   try {

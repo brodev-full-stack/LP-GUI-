@@ -40,15 +40,7 @@ export function createConstraint(
   };
 }
 
-export function createModel(name: string = 'Nuevo Modelo'): LPModel {
-  const v1 = createVariable('x1', 'continuous', 0, null);
-  const v2 = createVariable('x2', 'continuous', 0, null);
-
-  const c1 = createConstraint('Restricción 1', '<=', 10, {
-    [v1.id]: 1,
-    [v2.id]: 1,
-  });
-
+export function createZeroModel(name: string = 'Nuevo Modelo'): LPModel {
   return {
     id: generateUniqueId('model'),
     name,
@@ -57,20 +49,22 @@ export function createModel(name: string = 'Nuevo Modelo'): LPModel {
     updatedAt: Date.now(),
     objective: {
       direction: 'maximize',
-      terms: {
-        [v1.id]: 1,
-        [v2.id]: 1,
-      },
+      terms: {},
     },
-    variables: [v1, v2],
-    constraints: [c1],
+    variables: [],
+    constraints: [],
   };
+}
+
+export function createModel(name: string = 'Nuevo Modelo'): LPModel {
+  return createZeroModel(name);
 }
 
 export function cloneModel(model: LPModel): LPModel {
   return JSON.parse(JSON.stringify(model));
 }
 
-export { createModel as createEmptyModel };
+export { createZeroModel as createEmptyModel };
+export * from './lingo';
 export { validateModel, modelToLPFormat, EXAMPLE_MODELS, EXAMPLE_MODELS as PRELOADED_EXAMPLES };
 export type { ModelValidationResult };

@@ -3,7 +3,7 @@ import { I18nProvider, useI18n } from './lib/i18n';
 import { LPModel, SolveResult } from './lib/solver/types';
 import { solveLP } from './lib/solver';
 import { PRELOADED_EXAMPLES } from './lib/model/examples';
-import { createEmptyModel } from './lib/model';
+import { createEmptyModel, createZeroModel } from './lib/model';
 import { saveModel, getModel, savePreference, getPreference } from './lib/storage';
 
 // Layout & UI Components
@@ -19,27 +19,43 @@ import { ObjectiveForm } from './lib/components/model-editor/ObjectiveForm';
 import { VariableTable } from './lib/components/model-editor/VariableTable';
 import { ConstraintTable } from './lib/components/model-editor/ConstraintTable';
 import { ValidationBar } from './lib/components/model-editor/ValidationBar';
+import { LingoEditor } from './lib/components/editor/LingoEditor';
 
 // Visualization & Results
 import { FeasibleRegion } from './lib/viz/feasible-region';
 import { MultivarViz } from './lib/viz/multivar-viz';
 import { SolutionPanel } from './lib/components/results/SolutionPanel';
 
-import { Edit3, Play, FileCode2, Compass, BarChart2, GripVertical } from 'lucide-react';
+import {
+  Edit3,
+  Play,
+  FileCode2,
+  Compass,
+  BarChart2,
+  SlidersHorizontal,
+  Code2,
+  Sparkles,
+  BookOpen,
+  Layers,
+} from 'lucide-react';
 
 const LAST_MODEL_KEY = 'last_active_model_id';
 const SPLIT_RATIO_KEY = 'desktop_split_ratio';
 
 type MobileTab = 'editor' | 'viz' | 'results';
+type EditorMode = 'visual' | 'lingo';
 
 const AppContent: React.FC = () => {
   const { t, formatDate } = useI18n();
 
-  // Model & solution state
-  const [model, setModel] = useState<LPModel>(PRELOADED_EXAMPLES[0]);
+  // Model & solution state - starts completely from zero
+  const [model, setModel] = useState<LPModel>(() => createZeroModel('Nuevo Modelo LP'));
   const [solution, setSolution] = useState<SolveResult | null>(null);
   const [isSolving, setIsSolving] = useState<boolean>(false);
   const [isSaved, setIsSaved] = useState<boolean>(false);
+
+  // Editor mode: Form-based or LINGO syntax
+  const [editorMode, setEditorMode] = useState<EditorMode>('visual');
 
   // Mobile navigation tab
   const [mobileTab, setMobileTab] = useState<MobileTab>('editor');
@@ -72,19 +88,28 @@ const AppContent: React.FC = () => {
           const saved = await getModel(lastId);
           if (saved) {
             setModel(saved);
-            solve(saved);
+            if (saved.variables.length > 0) {
+              solve(saved);
+            }
             return;
           }
         }
       } catch (err) {
         console.warn('Could not load cached preferences, using defaults', err);
       }
-      solve(PRELOADED_EXAMPLES[0]);
+      // Start completely empty with zero pre-populated variables/constraints
+      const zero = createZeroModel('Nuevo Modelo LP');
+      setModel(zero);
+      setSolution(null);
     }
     initModelAndPreferences();
   }, []);
 
   const solve = async (modelToSolve: LPModel) => {
+    if (!modelToSolve.variables || modelToSolve.variables.length === 0) {
+      setSolution(null);
+      return;
+    }
     setIsSolving(true);
     try {
       const res = await solveLP(modelToSolve);
@@ -118,7 +143,7 @@ const AppContent: React.FC = () => {
   };
 
   const handleNewModel = () => {
-    const empty = createEmptyModel('Nuevo Modelo LP');
+    const empty = createZeroModel('Nuevo Modelo LP');
     setModel(empty);
     setSolution(null);
     saveModel(empty);
@@ -128,7 +153,11 @@ const AppContent: React.FC = () => {
   const handleSelectModel = (selected: LPModel) => {
     setModel(selected);
     savePreference(LAST_MODEL_KEY, selected.id);
-    solve(selected);
+    if (selected.variables.length > 0) {
+      solve(selected);
+    } else {
+      setSolution(null);
+    }
   };
 
   // Draggable Split Divider Logic
@@ -209,7 +238,7 @@ const AppContent: React.FC = () => {
   }, [model]);
 
   return (
-    <div className="min-h-screen flex flex-col justify-between swiss-grid-subtle">
+    <div className="min-h-screen flex flex-col justify-between m3-surface">
       {/* Top Navigation */}
       <div className="no-print">
         <TopBar
@@ -253,7 +282,7 @@ const AppContent: React.FC = () => {
                   if (e.key === 'Enter') setIsEditingName(false);
                 }}
                 onChange={(e) => handleModelChange({ ...model, name: e.target.value })}
-                className="text-base sm:text-lg font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-blue-500 outline-hidden"
+                className="text-base sm:text-lg font-bold text-slate-900 bg-white px-2.5 py-0.5 rounded-xl border border-indigo-500 outline-hidden shadow-2xs"
               />
             ) : (
               <div
@@ -264,7 +293,7 @@ const AppContent: React.FC = () => {
                 <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
                   {model.name}
                 </h2>
-                <Edit3 className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 transition" />
+                <Edit3 className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600 transition" />
               </div>
             )}
 
@@ -277,8 +306,8 @@ const AppContent: React.FC = () => {
             <button
               type="button"
               onClick={handleSolve}
-              disabled={isSolving}
-              className="flex items-center gap-2 px-3.5 py-1.5 rounded-md bg-blue-600 text-white font-semibold text-xs hover:bg-blue-700 active:bg-blue-800 transition cursor-pointer disabled:opacity-50"
+              disabled={isSolving || model.variables.length === 0}
+              className="m3-gradient-btn flex items-center gap-2 px-4 py-2 text-xs font-semibold cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
               <span>{isSolving ? t('editor.solving') : t('editor.solve')}</span>
@@ -290,13 +319,13 @@ const AppContent: React.FC = () => {
         <ValidationBar model={model} />
 
         {/* Mobile Segmented Navigation Tabs (< lg screens) */}
-        <div className="lg:hidden no-print bg-slate-200/80 p-1 rounded-lg flex items-center text-xs font-semibold">
+        <div className="lg:hidden no-print bg-slate-200/70 p-1 rounded-2xl flex items-center text-xs font-semibold">
           <button
             type="button"
             onClick={() => setMobileTab('editor')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md transition cursor-pointer ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl transition cursor-pointer ${
               mobileTab === 'editor'
-                ? 'bg-white text-blue-700 shadow-2xs'
+                ? 'bg-white text-indigo-700 shadow-2xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -307,9 +336,9 @@ const AppContent: React.FC = () => {
           <button
             type="button"
             onClick={() => setMobileTab('viz')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md transition cursor-pointer ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl transition cursor-pointer ${
               mobileTab === 'viz'
-                ? 'bg-white text-blue-700 shadow-2xs'
+                ? 'bg-white text-indigo-700 shadow-2xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -320,9 +349,9 @@ const AppContent: React.FC = () => {
           <button
             type="button"
             onClick={() => setMobileTab('results')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md transition cursor-pointer ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl transition cursor-pointer ${
               mobileTab === 'results'
-                ? 'bg-white text-blue-700 shadow-2xs'
+                ? 'bg-white text-indigo-700 shadow-2xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -338,9 +367,43 @@ const AppContent: React.FC = () => {
         <div className="lg:hidden flex flex-col gap-4">
           {mobileTab === 'editor' && (
             <div className="flex flex-col gap-4">
-              <ObjectiveForm model={model} onChange={handleModelChange} />
-              <VariableTable model={model} onChange={handleModelChange} />
-              <ConstraintTable model={model} onChange={handleModelChange} />
+              {/* Mode switch */}
+              <div className="flex items-center gap-1 p-1 rounded-2xl bg-slate-100/90 border border-slate-200/80">
+                <button
+                  type="button"
+                  onClick={() => setEditorMode('visual')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold rounded-xl transition ${
+                    editorMode === 'visual'
+                      ? 'bg-white text-indigo-700 shadow-2xs'
+                      : 'text-slate-600'
+                  }`}
+                >
+                  <SlidersHorizontal className="w-3.5 h-3.5" />
+                  <span>Formularios</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditorMode('lingo')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold rounded-xl transition ${
+                    editorMode === 'lingo'
+                      ? 'bg-white text-indigo-700 shadow-2xs'
+                      : 'text-slate-600'
+                  }`}
+                >
+                  <Code2 className="w-3.5 h-3.5" />
+                  <span>LINGO / TXT</span>
+                </button>
+              </div>
+
+              {editorMode === 'visual' ? (
+                <>
+                  <ObjectiveForm model={model} onChange={handleModelChange} />
+                  <VariableTable model={model} onChange={handleModelChange} />
+                  <ConstraintTable model={model} onChange={handleModelChange} />
+                </>
+              ) : (
+                <LingoEditor model={model} onModelChange={handleModelChange} onSolve={handleSolve} />
+              )}
             </div>
           )}
 
@@ -351,6 +414,26 @@ const AppContent: React.FC = () => {
               )}
               {model.variables.length > 2 && (
                 <MultivarViz model={model} solution={solution} />
+              )}
+              {model.variables.length < 2 && (
+                <div className="m3-card p-6 flex flex-col items-center justify-center text-center gap-3 bg-white border border-slate-200/90">
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                    <Sparkles className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-900">
+                    Lienzo Inicial Vacío
+                  </h3>
+                  <p className="text-xs text-slate-500 max-w-xs">
+                    Define variables y restricciones en el editor para generar la región factible y gráficas en tiempo real.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setMobileTab('editor')}
+                    className="mt-1 px-4 py-1.5 rounded-full bg-indigo-600 text-white text-xs font-semibold"
+                  >
+                    Ir al Editor
+                  </button>
+                </div>
               )}
             </div>
           )}
@@ -372,9 +455,46 @@ const AppContent: React.FC = () => {
             style={{ width: `${splitRatio}%` }}
             className="flex flex-col gap-4 pr-3 shrink-0 overflow-y-auto"
           >
-            <ObjectiveForm model={model} onChange={handleModelChange} />
-            <VariableTable model={model} onChange={handleModelChange} />
-            <ConstraintTable model={model} onChange={handleModelChange} />
+            {/* Structured vs LINGO Mode Switch */}
+            <div className="flex items-center justify-between gap-2 p-1 rounded-2xl bg-slate-100/90 border border-slate-200/80">
+              <button
+                type="button"
+                onClick={() => setEditorMode('visual')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                  editorMode === 'visual'
+                    ? 'bg-white text-indigo-700 shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <span>Formularios Estructurados</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditorMode('lingo')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                  editorMode === 'lingo'
+                    ? 'bg-white text-indigo-700 shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Code2 className="w-3.5 h-3.5" />
+                <span>Sintaxis LINGO / TXT</span>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200">
+                  v18+
+                </span>
+              </button>
+            </div>
+
+            {editorMode === 'visual' ? (
+              <>
+                <ObjectiveForm model={model} onChange={handleModelChange} />
+                <VariableTable model={model} onChange={handleModelChange} />
+                <ConstraintTable model={model} onChange={handleModelChange} />
+              </>
+            ) : (
+              <LingoEditor model={model} onModelChange={handleModelChange} onSolve={handleSolve} />
+            )}
           </div>
 
           {/* Draggable Divider Bar */}
@@ -383,11 +503,11 @@ const AppContent: React.FC = () => {
             onTouchStart={handleSplitTouchStart}
             onDoubleClick={handleSplitDoubleClick}
             title={t('editor.splitDrag')}
-            className={`w-3 mx-1 self-stretch flex items-center justify-center splitter-handle rounded transition-colors group cursor-col-resize ${
-              isDraggingSplit ? 'bg-blue-500 text-white' : 'hover:bg-slate-200 text-slate-400'
+            className={`w-3 mx-1 self-stretch flex items-center justify-center splitter-handle rounded-full transition-colors group cursor-col-resize ${
+              isDraggingSplit ? 'bg-indigo-500 text-white' : 'hover:bg-slate-200 text-slate-400'
             }`}
           >
-            <div className="h-10 w-1.5 flex flex-col items-center justify-center gap-1 rounded bg-slate-300 group-hover:bg-blue-600 transition-colors">
+            <div className="h-10 w-1.5 flex flex-col items-center justify-center gap-1 rounded-full bg-slate-300 group-hover:bg-indigo-600 transition-colors">
               <span className="w-0.5 h-0.5 rounded-full bg-white" />
               <span className="w-0.5 h-0.5 rounded-full bg-white" />
               <span className="w-0.5 h-0.5 rounded-full bg-white" />
@@ -405,6 +525,41 @@ const AppContent: React.FC = () => {
 
             {model.variables.length > 2 && (
               <MultivarViz model={model} solution={solution} />
+            )}
+
+            {model.variables.length < 2 && (
+              <div className="m3-card p-6 md:p-8 flex flex-col items-center justify-center text-center gap-4 bg-gradient-to-b from-white to-indigo-50/20 border border-slate-200/90 shadow-sm">
+                <div className="w-14 h-14 rounded-3xl bg-gradient-to-tr from-indigo-600 via-indigo-700 to-purple-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
+                  <Sparkles className="w-7 h-7" />
+                </div>
+                <div className="max-w-md">
+                  <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
+                    Lienzo de Optimización Listo
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                    Comienza desde cero agregando variables y restricciones en el panel izquierdo, o escribe directamente en sintaxis LINGO.
+                    Al definir 2 variables se activará la región geométrica interactiva en 2D, y con 3 o más variables el radar multivariable.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setExamplesModalOpen(true)}
+                    className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-full bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-2xs transition cursor-pointer"
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Ver Ejemplos de Referencia</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditorMode('lingo')}
+                    className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition cursor-pointer"
+                  >
+                    <Code2 className="w-3.5 h-3.5" />
+                    <span>Escribir en LINGO</span>
+                  </button>
+                </div>
+              </div>
             )}
 
             <SolutionPanel model={model} solution={solution} isSolving={isSolving} />
